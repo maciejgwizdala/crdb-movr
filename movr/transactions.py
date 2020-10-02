@@ -106,6 +106,8 @@ def add_vehicle_txn(session, vehicle_type, longitude, latitude, battery):
     # YOU MAY FIND THIS LINK IN THE SQLALCHEMY DOCS USEFUL:
     # https://docs.sqlalchemy.org/en/13/orm/session_api.html#sqlalchemy.orm.session.Session.add
 
+    session.add(new_row)
+
     return str(vehicle_id)  # Return the new id.
 
 
@@ -123,8 +125,9 @@ def remove_vehicle_txn(session, vehicle_id):
     """
     # find the row.
     # SELECT * FROM vehicles WHERE id = <vehicle_id> AND in_use = false;
-    vehicle = session.query(Vehicle).filter(Vehicle.id == vehicle_id). \
-                                     filter(Vehicle.in_use == False).first()
+    vehicle = session.query(Vehicle). \
+                      filter(Vehicle.id == vehicle_id). \
+                      filter(Vehicle.in_use == False).first()
 
     if vehicle is None:  # Either vehicle is in use or it's been deleted
         return None
@@ -136,6 +139,9 @@ def remove_vehicle_txn(session, vehicle_id):
     # YOU WILL NEED TO USE THE 'session' OBJECT.
     # YOU MAY FIND THIS LINK IN THE SQLALCHEMY DOCS USEFUL:
     # https://docs.sqlalchemy.org/en/13/orm/session_api.html#sqlalchemy.orm.session.Session.delete
+
+
+    session.delete(vehicle)
 
     return True  # Should return True when vehicle is deleted.
 
