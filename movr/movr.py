@@ -8,10 +8,11 @@ from sqlalchemy.orm import sessionmaker
 
 from movr.transactions import (add_user_txn, add_vehicle_txn, end_ride_txn,
                                get_active_ride_txn, get_rides_by_user_txn,
-                               get_user_txn, get_vehicle_txn, get_vehicles_txn,
+                               get_user_txn,
+                               get_vehicle_and_location_history_txn,
+                               get_vehicle_txn, get_vehicles_txn,
                                remove_user_txn, remove_vehicle_txn,
-                               start_ride_txn,
-                               get_vehicle_and_location_history_txn)
+                               start_ride_txn)
 
 registry.register("cockroachdb", "cockroachdb.sqlalchemy.dialect",
                   "CockroachDBDialect")
@@ -75,19 +76,21 @@ class MovR:
             self.sessionfactory,
             lambda session: remove_vehicle_txn(session, vehicle_id))
 
-    def add_vehicle(self, vehicle_type, longitude, latitude, battery):
+    def add_vehicle(self, longitude, latitude, battery, vehicle_info):
         """
         Wraps a `run_transaction` call that adds a vehicle.
 
         Arguments:
             vehicle_type {String} -- The type of vehicle.
+            longitude {Float} -- longitude of the vehicle.
+            latitude {Float} -- latitude of the vehicle.
+            battery {Int} -- battery % of the vehicle.
+            vehicle_info {dict} -- information on the vehicle, in JSON format.
         """
         return run_transaction(self.sessionfactory,
-                               lambda session: add_vehicle_txn(session,
-                                                               vehicle_type,
-                                                               longitude,
-                                                               latitude,
-                                                               battery))
+                               lambda session: add_vehicle_txn(
+                                   session, longitude, latitude, battery,
+                                   vehicle_info))
 
     def get_vehicles(self, max_vehicles=None):
         """

@@ -11,11 +11,11 @@
         {% for vehicle in vehicles %}
           <div class="col-4">
               <div class="vehicle">
-                  <div class="map">{{ vehicle.last_location }}|{{ API_KEY }}|{{ vehicle.vehicle_type }}</div>
+                  <div class="map">{{ vehicle.last_location }}|{{ API_KEY }}|{{ vehicle.type }}</div>
                   <div class="content">
                       <div class="row">
                           <h5>
-                              <bf class="text-capitalize">{{ vehicle.vehicle_type }}</bf>
+                              <bf class="text-capitalize">{{ vehicle.vehicle_info.type }}</bf>
                           </h5>
                       </div>
                       <div class="row desc">
@@ -41,6 +41,17 @@
                           </div>
                       </div>
                       
+                      <div class="row desc">
+                          <div>
+                              <div class="label">Color</div> 
+                              <bf class="text-capitalize">{{ vehicle.vehicle_info.color }}</bf>
+                          </div>
+                          <div>
+                              <div class="label">Brand</div> 
+                              <bf class="text-capitalize">{{ vehicle.vehicle_info.purchase_information.manufacturer }}</bf>
+                          </div>
+                      </div>
+
                       <div class="row desc">
                           <div>
                               <div class="label">Battery</div> 

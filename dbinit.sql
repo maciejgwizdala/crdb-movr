@@ -72,3 +72,36 @@ IMPORT INTO movr.rides (
     end_ts
     ) CSV DATA ('https://cockroach-university-public.s3.amazonaws.com/10000_rides_data.csv')
 WITH delimiter = '|';
+
+CREATE INDEX ON movr.users (last_name, first_name);
+
+CREATE INDEX ON movr.users (first_name);
+
+ALTER TABLE movr.vehicles ADD COLUMN vehicle_info JSON;
+
+-- Run python script to import vehicle_info column:
+-- python3 util/add_vehicle_json_data.py --url '<DB_URI from .env>'
+
+SET sql_safe_updates = false;
+
+UPDATE movr.vehicles SET vehicle_info = json_set(
+    vehicle_info,
+    ARRAY['type'],
+    to_json(vehicle_type)
+);
+
+ALTER TABLE movr.vehicles DROP COLUMN vehicle_type;
+
+SET sql_safe_updates = true;
+
+CREATE INVERTED INDEX ON movr.vehicles (vehicle_info);
+
+ALTER TABLE movr.vehicles ADD COLUMN serial_number INT
+    AS (
+        ( vehicle_info->'purchase_information'->>'serial_number'
+        )::INT8
+    ) STORED;
+
+CREATE INDEX ON movr.vehicles (serial_number);
+
+CREATE INDEX ON movr.vehicles (battery) STORING (in_use);

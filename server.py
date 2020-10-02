@@ -342,7 +342,7 @@ def ride(vehicle_id):
 
     vehicle_at_start = {"id": vehicle_id,
                         "battery": user_ride["vehicle_battery"],
-                        "vehicle_type": user_ride["vehicle_type"],
+                        "vehicle_type": user_ride["vehicle_info"]["type"],
                         "last_longitude": user_ride["start_longitude"],
                         "last_latitude": user_ride["start_latitude"],
                         "last_checkin": user_ride["start_time"]}
@@ -373,8 +373,18 @@ def add_vehicle():
     form = VehicleForm()
     if form.validate_on_submit():
         vehicle_type = form.vehicle_type.data
+        color = form.color.data
+        manufacturer = form.manufacturer.data
+        serial_number = form.serial_number.data
+        wear = form.vehicle_wear.data
+        purchase_date = form.purchase_date.data
+        vehicle_info = {"type": vehicle_type, "color": color, "wear": wear,
+                        "purchase_information": {
+                            "manufacturer": manufacturer,
+                            "serial_number": serial_number,
+                            "purchase_date": purchase_date}}
         try:
-            new_info = movr.add_vehicle(vehicle_type=vehicle_type,
+            new_info = movr.add_vehicle(vehicle_info=vehicle_info,
                                         longitude=form.longitude.data,
                                         latitude=form.latitude.data,
                                         battery=form.battery.data)

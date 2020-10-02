@@ -2,8 +2,8 @@
 Aligns sqlalchemy's schema for the "vehicles" table with the database.
 """
 
-from sqlalchemy import (ARRAY, Boolean, Column, DateTime, Float, ForeignKey,
-                        Integer, PrimaryKeyConstraint, String)
+from sqlalchemy import (ARRAY, Boolean, Column, DateTime, FetchedValue, Float, ForeignKey,
+                        JSON, Integer, PrimaryKeyConstraint, String)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.expression import func
@@ -22,13 +22,14 @@ class Vehicle(Base):
     __tablename__ = 'vehicles'
     id = Column(UUID)
     in_use = Column(Boolean)
-    vehicle_type = Column(String)
     battery = Column(Integer)
+    vehicle_info = Column(JSON)
+    serial_number = Column(Integer, FetchedValue())
     PrimaryKeyConstraint(id)
 
     def __repr__(self):
-        return "<Vehicle(id='{0}', vehicle_type='{1}')>".format(
-            self.id, self.vehicle_type)
+        return "<Vehicle(id='{0}', vehicle_info='{1}', serial_number='{2}')>".format(
+            self.id, self.vehicle_info, self.serial_number)
 
 
 class LocationHistory(Base):
@@ -70,7 +71,6 @@ class User(Base, UserMixin):
     last_name = Column(String)
     first_name = Column(String)
     phone_numbers = Column(ARRAY(String))
-
     PrimaryKeyConstraint(email)
 
     def get_id(self):

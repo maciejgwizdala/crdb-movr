@@ -103,30 +103,16 @@ def end_ride_txn(session, ride_id, new_longitude, new_latitude,
 
     return True  # Make it explicit that this worked.
 
-
-def add_vehicle_txn(session, vehicle_type, longitude, latitude, battery):
+def add_vehicle_txn(session, longitude, latitude, battery, vehicle_info):
     """
     Insert a row into the vehicles table, and one into location_history.
 
-    Does the equivalent of:
-
-    # BEGIN;
-    #
-    #    INSERT INTO vehicles (id, battery, in_use, vehicle_type)
-    #         VALUES (<vehicle_id>, 12, false, 'scooter')
-    #    );
-    #
-    #    INSERT INTO location_history (id, vehicle_id, ts, longitude, latitude)
-    #         VALUES (<uuid>, <vehicle_id>, now(), <longitude>, <latitude>);
-    #
-    # COMMIT;
-
     Arguments:
         session {.Session} -- The active session for the database connection.
-        vehicle_type {String} -- The vehicle's type.
         longitude {Float}  -- Longitude of the vehicle.
         Latitude {Float} -- Latitude of the vehicle.
         battery {Int} -- Battery percantage remaining.
+        vehicle_info {dict} -- Information on the vehicle's info.
 
     Returns:
         {dict} -- The vehicle's new UUID and the location_history row's new
@@ -138,7 +124,7 @@ def add_vehicle_txn(session, vehicle_type, longitude, latitude, battery):
 
     new_vehicle_row = Vehicle(id=str(vehicle_id),
                               in_use=False,
-                              vehicle_type=vehicle_type,
+                              vehicle_info=vehicle_info,
                               battery=battery)
     new_location_history_row = LocationHistory(id=str(location_history_id),
                                                vehicle_id=str(vehicle_id),
@@ -204,18 +190,13 @@ def get_vehicles_txn(session, max_records):
     * Updated for two-table schema (vehicles & location_history).
     * Single-table query was session.query(Vehicle).limit(max_records).all()
 
-    Was previously
-    --------------
-
-    SELECT * FROM vehicles LIMIT <max_records>;
-
     Now is equivalent to
     --------------------
 
     SELECT
         v.id AS id,
         v.in_use AS in_use,
-        v.vehicle_type AS vehicle_type,
+        v.vehicle_info AS vehicle_info,
         v.battery AS battery,
         l.ts AS last_checkin,
         l.latitude AS last_latitude,
@@ -242,81 +223,6 @@ def get_vehicles_txn(session, max_records):
 
     * Updated for two-table schema (vehicles & location_history).
     * Single-table query was session.query(Vehicle).limit(max_records).all()
-
-    Was previously
-    --------------
-
-    SELECT * FROM vehicles LIMIT <max_records>;
-
-    Now is equivalent to
-    --------------------
-
-    SELECT
-        v.id AS id,
-        v.in_use AS in_use,
-        v.vehicle_type AS vehicle_type,
-        v.battery AS battery,
-        l.ts AS last_checkin,
-        l.latitude AS last_latitude,
-        l.longitude AS last_longitude
-    FROM
-        vehicles AS v
-    INNER JOIN
-        location_history AS l
-            ON v.id = l.vehicle_id
-    INNER JOIN
-        (
-            SELECT
-                vehicle_id,
-                MAX(ts) AS max_ts
-            FROM
-                location_history
-            GROUP BY
-                vehicle_id
-        ) AS g
-            ON g.vehicle_id = l.vehicle_id
-            AND g.MaxTS = l.ts
-    ORDER BY v.id
-    LIMIT max_records;
-
-    * Updated for two-table schema (vehicles & location_history).
-    * Single-table query was session.query(Vehicle).limit(max_records).all()
-
-    Was previously
-    --------------
-
-    SELECT * FROM vehicles LIMIT <max_records>;
-
-    Now is equivalent to
-    --------------------
-
-    SELECT
-        v.id AS id,
-        v.in_use AS in_use,
-        v.vehicle_type AS vehicle_type,
-        v.battery AS battery,
-        l.ts AS last_checkin,
-        l.latitude AS last_latitude,
-        l.longitude AS last_longitude
-    FROM
-        vehicles AS v
-    INNER JOIN
-        location_history AS l
-            ON v.id = l.vehicle_id
-    INNER JOIN
-        (
-            SELECT
-                vehicle_id,
-                MAX(ts) AS max_ts
-            FROM
-                location_history
-            GROUP BY
-                vehicle_id
-        ) AS g
-            ON g.vehicle_id = l.vehicle_id
-            AND g.MaxTS = l.ts
-    ORDER BY v.id
-    LIMIT max_records;
 
     Arguments:
         session {.Session} -- The active session for the database connection.
@@ -331,7 +237,7 @@ def get_vehicles_txn(session, max_records):
     # (SELECT vehicle_id, MAX(g.ts) AS max_ts FROM location_history
     g = find_most_recent_timestamp_subquery(session)
 
-    vehicles = session.query(v.id, v.in_use, v.vehicle_type, v.battery,
+    vehicles = session.query(v.id, v.in_use, v.vehicle_info, v.battery,
                              l.longitude, l.latitude, l.ts). \
                        filter(l.vehicle_id == v.id). \
                        join(g). \
@@ -348,17 +254,13 @@ def get_vehicles_txn(session, max_records):
                                      'last_checkin': vehicle.ts,
                                      'in_use': vehicle.in_use,
                                      'battery': vehicle.battery,
-                                     'vehicle_type': vehicle.vehicle_type},
+                                     'vehicle_info': vehicle.vehicle_info},
                     vehicles))
 
 
 def get_vehicle_txn(session, vehicle_id):
     """
     For when you just want a single vehicle.
-
-    * Designed for two-table schema (vehicles & location_history).
-    * Previous version's query was
-      `session.query(Vehicle).filter(Vehicle.id == vehicle_id).first()
 
     Arguments:
         session {.Session} -- The active session for the database connection.
@@ -373,7 +275,7 @@ def get_vehicle_txn(session, vehicle_id):
     g = find_most_recent_timestamp_subquery(session)
 
     # SELECT columns
-    vehicle = session.query(v.id, v.in_use, v.vehicle_type, v.battery,
+    vehicle = session.query(v.id, v.in_use, v.vehicle_info, v.battery,
                             l.longitude, l.latitude, l.ts). \
                       filter(l.vehicle_id == v.id). \
                       filter(l.vehicle_id == vehicle_id). \
@@ -389,7 +291,7 @@ def get_vehicle_txn(session, vehicle_id):
     return {'id': str(vehicle.id), 'last_longitude': vehicle.longitude,
             'last_latitude': vehicle.latitude, 'last_checkin': vehicle.ts,
             'in_use': vehicle.in_use, 'battery': vehicle.battery,
-            'vehicle_type': vehicle.vehicle_type}
+            'vehicle_info': vehicle.vehicle_info, 'serial_number': vehicle.serial_number}
 
 
 def get_vehicle_and_location_history_txn(session, vehicle_id, max_locations):
@@ -415,7 +317,8 @@ def get_vehicle_and_location_history_txn(session, vehicle_id, max_locations):
     vehicle_info = {"id": vehicle.id,
                     "in_use": vehicle.in_use,
                     "battery": vehicle.battery,
-                    "vehicle_type": vehicle.vehicle_type}
+                    "vehicle_info": vehicle.vehicle_info,
+                    "serial_number": vehicle.serial_number}
 
     location_history = list(map(
         lambda location: {'longitude': location.longitude,
@@ -454,14 +357,9 @@ def add_user_txn(session, email, last_name, first_name, phone_numbers):
             strings. Empty array is OK.
     """
     phone_numbers = parse_phone_numbers(phone_numbers)
-
-    new_user_row = User(email=email,
-                        last_name=last_name,
-                        first_name=first_name,
-                        phone_numbers=phone_numbers)
-
-    session.add(new_user_row)
-    session.flush()  # can't let the next row get inserted first.
+    user = User(email=email, last_name=last_name, first_name=first_name,
+                phone_numbers=phone_numbers)
+    session.add(user)
 
     return True
 
@@ -474,14 +372,14 @@ def get_user_txn(session, email):
         email {String} -- The user's email.
 
     Returns:
-        user {User} -- The user's row from the database.
+        user -- User object.
             Note that, unlike all other *_txn() functions, this does not map
             the object returned by the query to a dictionary.
+
     """
     user = session.query(User).filter(User.email == email).first()
     if user is None:  # No record found
         return None
-
     else:
         session.expunge(user)  # detatch User instance from the session
 
@@ -494,12 +392,12 @@ def get_rides_by_user_txn(session, email):
     """
     r = aliased(Ride)
     v = aliased(Vehicle)
-    rides = session.query(r.vehicle_id, v.vehicle_type, r.start_ts, r.end_ts). \
+    rides = session.query(r.vehicle_id, v.vehicle_info, r.start_ts, r.end_ts). \
                     filter(r.user_email == email). \
                     filter(v.id == r.vehicle_id). \
                     order_by(r.start_ts.desc()).all()
     return list(map(lambda ride: {'vehicle_id': ride.vehicle_id,
-                                  'vehicle_type': ride.vehicle_type,
+                                  'vehicle_info': ride.vehicle_info,
                                   'start_ts': ride.start_ts,
                                   'end_ts': ride.end_ts}, rides))
 
@@ -537,7 +435,7 @@ def get_active_ride_txn(session, vehicle_id, email):
     return {"id": str(ride.id),
             "vehicle_id": vehicle.id,
             "vehicle_battery": vehicle.battery,
-            "vehicle_type": vehicle.vehicle_type,
+            "vehicle_info": vehicle.vehicle_info,
             "start_longitude": start_location.longitude,
             "start_latitude": start_location.latitude,
             "start_time": ride.start_ts}

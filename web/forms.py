@@ -60,7 +60,8 @@ class VehicleForm(FlaskForm):
     Register a new vehicle.
     """
     vehicle_type = SelectField(label='Type',
-                       choices=[('scooter', 'Scooter')])
+                       choices=[('bike', 'Bike'), ('scooter', 'Scooter'),
+                                ('skateboard', 'Skateboard')])
     longitude = DecimalField(label='Longitude', validators=[
         input_required(),
         number_range(min=-180, max=180,
@@ -73,6 +74,11 @@ class VehicleForm(FlaskForm):
         input_required(),
         number_range(min=0, max=100,
                      message="Battery (percent) must be between 0 and 100.")])
+    color = StringField(label="Color", validators=[input_required()])
+    manufacturer = StringField(label="Manufacturer", validators=[])
+    serial_number = StringField(label="Serial Number", validators=[])
+    vehicle_wear = StringField(label="Vehicle Wear", validators=[])
+    purchase_date = StringField(label="Purchase Date", validators=[])
     submit = SubmitField('Add vehicle')
 
 
