@@ -5,15 +5,28 @@ Each class is a form.
 """
 
 from flask_wtf import FlaskForm
-from wtforms import (DecimalField, IntegerField, SubmitField, SelectField)
-from wtforms.validators import input_required, number_range
+from wtforms import (DecimalField, IntegerField, StringField, SubmitField,
+                     SelectField)
+from wtforms.validators import data_required, input_required, number_range
+
+
+class LoginForm(FlaskForm):
+    """Login form class.
+    """
+    email = StringField('Email: ', validators=[data_required()])
+    submit = SubmitField('Sign In')
 
 
 class StartRideForm(FlaskForm):
     """
-    "Start ride" button.
+    Creates a "Start ride" button.
     """
     submit = SubmitField('Start ride')
+
+
+class ViewRideForm(FlaskForm):
+    """Creates a 'View Ride' button"""
+    submit=SubmitField('View ride')
 
 
 class EndRideForm(FlaskForm):
@@ -47,7 +60,7 @@ class VehicleForm(FlaskForm):
     Register a new vehicle.
     """
     vehicle_type = SelectField(label='Type',
-                               choices=[('scooter', 'Scooter')])
+                       choices=[('scooter', 'Scooter')])
     longitude = DecimalField(label='Longitude', validators=[
         input_required(),
         number_range(min=-180, max=180,
@@ -68,3 +81,26 @@ class RemoveVehicleForm(FlaskForm):
     Button to delete a vehicle.
     """
     submit = SubmitField('Remove vehicle')
+
+
+class RegisterForm(FlaskForm):
+    """User registration form class.
+    """
+    email = StringField('Email', validators=[data_required()])
+    first_name = StringField('First name: ', validators=[data_required()])
+    last_name = StringField('Last name: ', validators=[data_required()])
+    phone_number = StringField('Phone number*', validators=[])
+    submit = SubmitField('Register')
+
+
+class DeletePhoneNumber(FlaskForm):
+    """
+    Deletes a phone number.
+    """
+    submit = SubmitField('Remove phone number')
+
+
+class RemoveUserForm(FlaskForm):
+    """Remove user form class.
+    """
+    submit = SubmitField('Delete my account')
