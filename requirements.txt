@@ -1,0 +1,10 @@
+docopt
+flask
+flask-bootstrap
+flask-login
+sqlalchemy
+sqlalchemy-cockroachdb
+psycopg2-binary
+geopy
+python-dotenv
+flask-wtf
